@@ -1,0 +1,51 @@
+mysql + innobackup 备份故障
+  备份时出现
+  innobackupex:  Using server version 10.0.17-MariaDB-wsrep
+
+innobackupex: Created backup directory /backups/xtrabackup/full/2015-04-04_21-43-36/2015-04-04_21-48-14
+
+150404 21:48:14  innobackupex: Starting ibbackup with command: xtrabackup  --defaults-group="mysqld" --backup --suspend-at-end --target-dir=/backups/full/2015-04-04_21-43-36/2015-04-04_21-48-14 --innodb_data_file_path="ibdata1:12M:autoextend" --tmpdir=/tmp --extra-lsndir='/tmp'
+innobackupex: Waiting for ibbackup (pid=30753) to suspend
+innobackupex: Suspend file '/backups/xtrabackup/full/2015-04-04_21-43-36/2015-04-04_21-48-14/xtrabackup_suspended_2'
+
+xtrabackup version 2.2.9 based on MySQL server 5.6.22 Linux (x86_64) (revision id: )
+xtrabackup: uses posix_fadvise().
+xtrabackup: cd to /var/lib/mysql
+xtrabackup: open files limit requested 0, set to 1024
+xtrabackup: using the following InnoDB configuration:
+xtrabackup:   innodb_data_home_dir = ./
+xtrabackup:   innodb_data_file_path = ibdata1:12M:autoextend
+xtrabackup:   innodb_log_group_home_dir = ./
+xtrabackup:   innodb_log_files_in_group = 2
+xtrabackup:   innodb_log_file_size = 1136656384
+>> log scanned up to (372528917742)
+xtrabackup: Generating a list of tablespaces
+2015-04-04 21:48:14 7f4c0b788720  InnoDB: Operating system error number 24 in a file operation.
+InnoDB: Error number 24 means 'Too many open files'.
+InnoDB: Some operating system error numbers are described at
+InnoDB: http://dev.mysql.com/doc/refman/5.6/en/operating-system-error-codes.html
+InnoDB: Error: could not open single-table tablespace file ./LINLEE/tblMiscActivityItems.ibd
+InnoDB: We do not continue the crash recovery, because the table may become
+InnoDB: corrupt if we cannot apply the log records in the InnoDB log to it.
+InnoDB: To fix the problem and start mysqld:
+InnoDB: 1) If there is a permission problem in the file and mysqld cannot
+InnoDB: open the file, you should modify the permissions.
+InnoDB: 2) If the table is not needed, or you can restore it from a backup,
+InnoDB: then you can remove the .ibd file, and InnoDB will do a normal
+InnoDB: crash recovery and ignore that table.
+InnoDB: 3) If the file system or the disk is broken, and you cannot remove
+InnoDB: the .ibd file, you can set innodb_force_recovery > 0 in my.cnf
+InnoDB: and force InnoDB to continue crash recovery here.
+innobackupex: got a fatal error with the following stacktrace: at /usr/bin/innobackupex line 2704
+    main::wait_for_ibbackup_file_create('/backups/full/2015-04-04_21-43-36/2015-04-04_21-48...') called at /usr/bin/innobackupex line 2724
+    main::wait_for_ibbackup_suspend('/backups/full/2015-04-04_21-43-36/2015-04-04_21-48...') called at /usr/bin/innobackupex line 1977
+    main::backup() called at /usr/bin/innobackupex line 1601
+innobackupex: Error: The xtrabackup child process has died at /usr/bin/innobackupex line 2704.
+
+解决方法：
+  原因应该是系统资源限制，导致用户无法打开过多的数据文件。
+  cat /etc/security/limits.conf
+  添加
+  * soft nofile 65535
+  * hard nofile 65535
+  再次执行备份，运行正常
